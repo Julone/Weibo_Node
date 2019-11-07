@@ -1,5 +1,6 @@
 "use strict"
-import Token from './../service/token'
+import Token from './../service/token';
+import {sqlQueryWithParam} from  './../service/mysql';
 
 export default function (req, res, next) {
     let token = req.headers.authorization;

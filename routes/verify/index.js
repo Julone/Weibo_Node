@@ -6,7 +6,7 @@ router.get('/', controller.default);
 router.post('/login',controller.login);
 router.post('/register',datalize([
     _field('usermail').trim().required().email(),
-    _field('userpass').isAes().trim().required()
+    _field('userpass').trim().required().isAes()
 ]),controller.register);
 router.get('/captcha',controller.captcha);
 // router.get('/checkCaptcha',controller.checkCaptcha);

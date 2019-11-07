@@ -6,7 +6,7 @@ const controller = require('./controller');
 
 router.get('/get/:id',controller.getUserFeedById);
 router.get('/info/get', controller.getInfo);
-router.post('/head/icon/set',authToken,controller.changeUserHead)
+router.post('/head/icon/set',authToken,controller.changeUserHead);
 
 router.post('/setInfo',authToken,datalize([
     field('user_name').trim().required(),

@@ -3,7 +3,7 @@ import email from './../../service/email'
 import redis from './../../service/redis'
 import sms from './../../service/sms'
 import Token from './../../service/token'
-import { dateFormat, md5, randomCode, postDataCheck, isNullVal, printErrorCode } from './../../utils/func'
+import { md5, randomCode, isNullVal, printErrorCode } from './../../utils/func'
 import { sqlQueryWithParam, sqlQuery } from './../../service/mysql'
 import {Decrypt, Encrypt} from './../../utils/aes'
 
@@ -104,6 +104,7 @@ async function userLoginByEmail(req) {
 }
 exports.register = async function (req, res, next) {
   try{
+    console.log('register');
     var usermail = req.body.usermail || null;
     var userpass = Decrypt(req.body.userpass) || null;
     var username = req.body.username || null;
@@ -133,8 +134,6 @@ exports.register = async function (req, res, next) {
     printErrorCode(res, 'verify', code.message)
   }
 }
-
-
 
 ////////////////////////邮箱START
 function sendMailFunc(usermail, code, res) {

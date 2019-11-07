@@ -7,10 +7,10 @@ import {
 
 exports.getUserFeedById = (req,res) =>{
     var user_id = req.params.id;
-    var req_time = req.query.req_time
+    var req_time = req.query.req_time || Date.now();
     require('./../model/select').selectFun(req,res,{
         where: `wb.user_id = '${user_id}' and wb.deleted = 0 or wb.deleted > ${req_time}`,
-        count_where: `where user_id = '${user_id}' and deleted = 0 or deleted > ${req_time}`,
+        count_where: `where f.user_id = '${user_id}' and deleted = 0 or deleted > ${req_time}`,
         orderTop:`wb.say_top desc,`
     },function(data){
         res.json(data)
@@ -20,7 +20,7 @@ exports.getUserFeedById = (req,res) =>{
 exports.getInfo = (req, res) => {
     var user_id = req.query.user_id || req.session.user_id;
     var sql = `select user_id,user_name,user_email,user_phone,user_icon,user_sex
-                ,user_birth,user_introduce,user_reg_time,
+                ,user_birth,user_introduce,user_reg_time,user_locate,
                 (select count(1) from user_follow where user_id = ?) follow_count,
                 (select count(1) from user_follow where follow_id = ?) fans_count
                 from user_info where user_id = ?`
@@ -44,11 +44,11 @@ exports.changeUserHead = (req,res)=>{
     var distFileName = `${user_id }_${Date.now()}.png`
     require('fs').writeFile('./uploads/user_icon/' + distFileName, dataBuffer, function(err) {
         if(err){
-          res.json({code:344,msg:'头像上传失败，请稍后重试！'});
+          res.json({code:344,msg:'头像上传失败，请稍后重试'});
         }else{
             var sql = `UPDATE user_info set user_icon=? WHERE user_id = ?`;
             var param = [distFileName,user_id]
-            sqlUpdateWithParam(sql,param,res,{okMsg:'头像保存成功',okData:{path:distFileName}})
+            sqlUpdateWithParam({sql,param,res,okMsg:'头像保存成功',okData:{path:distFileName}})
         }
     });
     
@@ -63,12 +63,11 @@ exports.setInfo = (req, res) => {
         user_locate
     } = req.body;
     var user_id = req.session.user_id;
-    var sql = `UPDATE user_info set user_name = ?,user_sex=?,user_birth=?,user_introduce = ? WHERE user_id = ?`;
-    var param = [user_name,  user_sex, user_birth, user_introduce,user_id];
-    sqlUpdateWithParam(sql,param,res,{okMsg:'更新个人资料成功'})
+    var sql = `UPDATE user_info set user_name = ?,user_sex=?,user_birth=?,user_introduce = ?,
+                user_locate = ?  WHERE user_id = ?`;
+    var param = [user_name,  user_sex, user_birth, user_introduce,user_locate,user_id];
+    sqlUpdateWithParam({sql,param,res,label:'更新资料'})
 }
-
-
 
 exports.followUser = async (req, res) => {
     var user_id = req.session.user_id;
@@ -80,6 +79,7 @@ exports.followUser = async (req, res) => {
                 EXISTS(SELECT 1 FROM user_info WHERE user_id = ?) as f_exist
                 from user_follow where user_id = ? and follow_id = ? limit 1`;
     var param = [user_id, follow_id, user_id, follow_id];
+    let label = follow_status == 1 ? '关注' : '取消关注';
     sqlQueryWithParam(sql, param).then(r => {
         if (!r[0].f_exist || !r[0].u_exist ) {
             printErrorCode(res, 'sql', 309);
@@ -87,15 +87,11 @@ exports.followUser = async (req, res) => {
             if (r[0].have_record) {
                 let sql = `update user_follow set follow_status = ?,update_time = ? where follow_id = ? and user_id = ?`;
                 let param = [follow_status, add_time, follow_id, user_id];
-                sqlInsertWithParam(sql, param, res, {
-                    okMsg: follow_status == 1 ? '关注成功！' : '取消关注成功！'
-                });
+                sqlInsertWithParam({sql, param, res, label});
             } else {
                 let sql = ` insert into user_follow(follow_id,user_id,add_time,update_time,follow_status) values(?,?,?,?,?) `
                 let param = [follow_id, user_id, add_time,add_time, follow_status];
-                sqlInsertWithParam(sql, param, res, {
-                    okMsg: follow_status == 1 ? '关注成功！' : '取消关注成功！'
-                });
+                sqlInsertWithParam({sql, param, res, label});
             }
         }
 
