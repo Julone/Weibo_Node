@@ -3,9 +3,9 @@ global._field = datalize.field;
 global.datalize_query = datalize.query;
 global.datalize_params = datalize.params;
 datalize.set('autoValidate', true);
-datalize.set('autoConvertToArray',true)
+datalize.set('autoConvertToArray',true);
 
-import validRule from './utils/datalize_rule';
+import validRule from './utils/datalize-rule';
 datalize.Field.prototype['isAes'] = function() {
 	return this.add(validRule.password);
 };
@@ -18,4 +18,7 @@ datalize.Field.prototype['required'] = function() {
 };
 datalize.Field.prototype['length'] = function(min,max) {
 	return this.add(validRule['length'].bind(this,min,max));
+};
+datalize.Field.prototype['nickName'] = function(min,max) {
+	return this.add(validRule['nickName'].bind(this,min,max));
 };

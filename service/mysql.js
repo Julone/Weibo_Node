@@ -1,7 +1,7 @@
 import mysqlClient from "mysql";
 import {
   printErrorCode
-} from './../error'
+} from '../utils/error'
 
 var connection = mysqlClient.createConnection({
   host: 'localhost',
@@ -20,25 +20,28 @@ connection.connect(function (err) {
   console.log('mysql连接成功 id ' + connection.threadId);
 });
 
-export const sqlQuery = (sql) => {
+export const sqlQuery = (sql,param = []) => {
   return new Promise((resolve, reject) => {
-    connection.query(mysqlClient.format(sql), (err, result) => {
+    connection.query(mysqlClient.format(sql,param), (err, result) => {
       console.log('SQL语句：' + mysqlClient.format(sql, param));
       console.log("mysql错误：" + err);
       if (err) reject(err);
       else resolve(result);
     })
+  }).then(r=>r).catch(e=>{
+    throw new Error("数据库错误")
   })
 }
 
-export const sqlQueryWithParam = (sql, param) => {
+export const sqlQueryWithParam = (sql, param,getOne=false) => {
   return new Promise((resolve, reject) => {
     connection.query(mysqlClient.format(sql, param), (err, result) => {
       console.log('SQL语句：' + mysqlClient.format(sql, param));
       console.log("mysql错误：" + err);
       if (err) reject(err);
       else {
-        resolve(JSON.parse(JSON.stringify(result)))
+        let output = JSON.parse(JSON.stringify(result));
+        resolve(getOne?output[0]:output);
       }
     })
   })

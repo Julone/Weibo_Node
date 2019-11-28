@@ -1,25 +1,23 @@
 import express from 'express'
-import datalize,{field} from 'datalize'
+import datalize,{ field } from 'datalize'
 import authToken from './../../middleware/token'
-const router =  express.Router()
-const controller = require('./controller');
+const router =  express.Router();
+const ctrl = require('./controller');
 
-router.get('/get/:id',controller.getUserFeedById);
-router.get('/info/get', controller.getInfo);
-router.post('/head/icon/set',authToken,controller.changeUserHead);
+router.get('/get/:id',ctrl.getUserFeedById);
+router.get('/info/get',ctrl.getInfo);
+router.post('/head/icon/set',authToken,ctrl.changeUserHead);
 
 router.post('/setInfo',authToken,datalize([
     field('user_name').trim().required(),
-    field('user_icon').trim().required(),
     field('user_sex').trim().required(),
     field('user_birth').trim().required(),
-]),controller.setInfo);
+]),ctrl.setInfo);
+router.post('/setPassword',authToken,datalize([
+    field('old_pass').trim().isAes().required(),
+    field('new_pass').trim().isAes().required()
+]),ctrl.setPassword);
 
-router.post('/follow/set',authToken,datalize([
-    field('follow_id').trim().required()
-]),controller.followUser)
-router.post('/follow/unset',authToken,datalize([
-    field('follow_id').trim().required()
-]),controller.followUser)
-
+router.use('/follow',require('./follow'));
+router.use('/fans',require('./fans'));
 module.exports =  router

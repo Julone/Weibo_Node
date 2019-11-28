@@ -6,7 +6,7 @@ import {
   postDataCheck,
   isNullVal,
   printErrorCode
-} from './../../utils/func'
+} from '../../utils/base'
 import {
   sqlQueryWithParam,
   sqlQuery

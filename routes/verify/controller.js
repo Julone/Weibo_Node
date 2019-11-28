@@ -1,18 +1,11 @@
-"use strict"
+"use strict";
 import email from './../../service/email'
 import redis from './../../service/redis'
 import sms from './../../service/sms'
 import Token from './../../service/token'
-import { md5, randomCode, isNullVal, printErrorCode } from './../../utils/func'
+import { md5, randomCode, isNullVal, printErrorCode } from '../../utils/base'
 import { sqlQueryWithParam, sqlQuery } from './../../service/mysql'
 import {Decrypt, Encrypt} from './../../utils/aes'
-
-exports.default = function (req, res) {
-  res.json({
-    code: 200,
-    msg: "You are visiting the path of " + req.baseUrl
-  })
-}
 
 exports.login = async function (req, res) {
   try{
@@ -33,7 +26,7 @@ exports.login = async function (req, res) {
   }catch(code){
     printErrorCode(res, 'verify', code.message)
   }
-}
+};
 function loginFailedProcess(req,res){
   if(req.session.login_failed_count) {
     let count = ++req.session.login_failed_count;
@@ -50,6 +43,31 @@ function loginFailedProcess(req,res){
     strictVerify:req.session.openCap 
   })
 }
+
+exports.unique_username = async function(req,res){
+  var username = req.body.user_name;
+  var sql = 'select * from user_info where user_name = ? limit 1';
+  var para = [username];
+  var rs = await sqlQueryWithParam(sql, para);
+  if(_.isArray(rs) && _.isEmpty(rs)){
+    res.json({code:200,msg:'该用户名可以注册'})
+  }else{
+    res.json({code:130,msg:'该用户名已被注册'})
+  }
+}
+
+async function userLoginByEmail(req) {
+  var usermail = req.body.usermail;
+  var sql = 'select * from user_info where user_email = ? limit 1';
+  var para = [usermail];
+  var a = await sqlQueryWithParam(sql, para);
+  if(_.isArray(a) && a.length != 0){
+    return {code:200,data:a[0]}
+  }else{
+    return {code:404,data:[]}
+  }
+}
+
 
 exports.captcha = function (req, res) {
   const {
@@ -91,17 +109,6 @@ function checkCaptcha(req, res) {
   })
 }
 
-async function userLoginByEmail(req) {
-  var usermail = req.body.usermail;
-  var sql = 'select * from user_info where user_email = ? limit 1';
-  var para = [usermail];
-  var a = await sqlQueryWithParam(sql, para);
-  if(_.isArray(a) && a.length != 0){
-    return {code:200,data:a[0]}
-  }else{
-    return {code:404,data:[]}
-  }
-}
 exports.register = async function (req, res, next) {
   try{
     console.log('register');
@@ -110,13 +117,21 @@ exports.register = async function (req, res, next) {
     var username = req.body.username || null;
     var result = await userLoginByEmail(req);
     if (result.code == 404) {
-        checkEmail(req, res, function(){
+        // checkEmail(req, res, function(){
           var sql = `insert into user_info(user_id,user_name,user_pass,user_email,
                       user_icon,user_phone,user_sex,user_birth,user_reg_time) 
                       values( REPLACE(UUID(),"-","") ,?,?,?,?,?,?,?,?)`;
           var para = [username, Encrypt(userpass), usermail, '', '', '', '', Date.now()];
-          sqlQueryWithParam(sql, para).then((result) => {
+          sqlQueryWithParam(sql, para).then(async (result) => {
             if(result.affectedRows > 0){
+              var sql2 = `insert into user_status(user_id) value(
+              (select user_id from user_info where id = ${result.insertId})
+              )`;
+
+              var rs = await sqlQuery(sql2);
+              if(rs.affectedRows <= 0){
+                throw new Error(503);
+              }
               res.json({
                 code:200,
                 msg:'注册成功！'
@@ -125,7 +140,7 @@ exports.register = async function (req, res, next) {
               throw new Error(503);
             }
           })
-        });
+        // });
         
     }else{
       throw new Error(506);
@@ -161,7 +176,7 @@ exports.sendEmailCap = async function (req, res) {
   var usermail = req.query.usermail || null;
   var curTime = Date.now();
   var code = randomCode();
-  redis.get('verify_email_' + md5(usermail), function (err, value) {
+  return redis.get('verify_email_' + md5(usermail), function (err, value) {
     if (err) res.json({ code: 500, msg: err });
     if (value){
       var data = JSON.parse(value);
@@ -204,15 +219,3 @@ exports.sendEmailCap = async function (req, res) {
   })
 }
 ///////////////////邮箱END
-
-// exports.sms = function (req, res) {
-//   sms.send('17720717154', randomCode(6), function (err, data) {
-//     if (!err && data.result == 0) {
-//       res.json({
-//         code: 200,
-//         msg: '验证码发送成功,请及时输入!'
-//       });
-//       sqlQuery()
-//     }
-//   })
-// }

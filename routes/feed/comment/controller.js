@@ -12,16 +12,21 @@ exports.send_comment = async function(req,res) {
   var say_id = req.body.say_id;
   var to_user_id = req.body.to_user_id;
   var reply_text = req.body.reply_text;
+  var origin_id = req.body.origin_id || null;
+  var parent_id = req.body.parent_id || null;
+  var reply_type = req.body.type;
   var reply_time = Date.now();
-  var reply_type = 0;
   var from_user_id = user_id;
   var sql = `
-              insert ignore into feed_reply(say_id,reply_type,to_user_id,from_user_id,reply_text,reply_time)
-              values(?,?,?,?,?,?)
+              insert ignore into feed_reply(say_id,reply_type,to_user_id,from_user_id,reply_text,
+              reply_time,origin_id,parent_id)
+              values(?,?,?,?,?,?,?,?)
             `;
-  var param = [say_id, reply_type,to_user_id,from_user_id,reply_text,reply_time];
+  var param = [say_id, reply_type,to_user_id,from_user_id,reply_text,reply_time,origin_id,parent_id];
   sqlInsertWithParam({sql,param,res,label:'评论',cbSQL:function(err,result,succss){
-    var sql = `select r.*,i.user_icon,i.user_name,i.user_id from feed_reply r left join 
+    var sql = `select r.*,(select user_name  from user_info where user_id = r.to_user_id) to_user_name,
+                 (select user_id  from user_info where user_id = r.to_user_id) to_user_id,
+                 (select user_icon  from user_info where user_id = r.to_user_id) to_user_icon,i.user_icon,i.user_name,i.user_id from feed_reply r left join 
             user_info i on r.from_user_id = i.user_id where r.id = ?`;
     var param = [result.insertId];
     sqlQueryWithParam(sql,param).then(r=>{

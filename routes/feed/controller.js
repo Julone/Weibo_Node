@@ -5,17 +5,11 @@ import {
   sqlDeleteWithParam,
   sqlUpdateWithParam
 } from './../../service/mysql'
-
-exports.default = function (req, res) {
-  res.json({
-    code: 200,
-    msg: "You are visiting the path of " + req.baseUrl
-  })
-}
+import feedSelect from './../model/feed';
 
 exports.get_feed = async function (req, res) {
   var req_time = req.query.req_time || Date.now();
-  require('./../model/select').selectFun(req,res,{
+  feedSelect(req,res,{
       where: `wb.deleted = 0 or wb.deleted > ${req_time}`,
       count_where: `where deleted = 0 or deleted > ${req_time} `,
       orderTop:``
@@ -26,7 +20,7 @@ exports.get_feed = async function (req, res) {
 exports.get_follow_feed = async function(req,res){
   var user_id = req.session.user_id;
   var req_time = req.query.req_time || Date.now();
-  require('./../model/select').selectFun(req,res,{
+  feedSelect(req,res,{
       where: `wb.user_id in (select follow_id from user_follow where user_id = '${user_id}' and follow_status = 1 ) 
               and wb.deleted = 0 or wb.deleted > ${req_time}`,
       count_where: `
@@ -41,7 +35,7 @@ exports.get_follow_feed = async function(req,res){
 exports.get_feed_by_id = async function(req,res){
   var ids = req.query.ids;
   var req_time = req.query.req_time || Date.now();
-  require('./../model/select').selectFun(req,res,{
+  feedSelect(req,res,{
       where: `wb.id in (${ids}) and wb.deleted = 0 or wb.deleted > ${req_time}`,
       count_where: `where f.id in (${ids}) and deleted = 0 or deleted > ${req_time}`,
       orderTop:``
@@ -63,7 +57,7 @@ exports.send_feed = async function (req, res) {
   var param = [user_id, text, JSON.stringify(img), say_time];
   var label = '发送微博';
   sqlInsertWithParam({sql,param,res,label,async cbSQL(err,result,rtnData){
-    require('./../model/select').selectFun(req,res,{
+    feedSelect(req,res,{
         where: `wb.id in (${result.insertId})`,
         count_where: `where f.id in (${result.insertId})`,
         msg:'发送微博成功'

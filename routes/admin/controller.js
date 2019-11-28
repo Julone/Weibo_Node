@@ -3,7 +3,7 @@ import email from './../../service/email'
 import redis from './../../service/redis'
 import sms from './../../service/sms'
 import Token from './../../service/token'
-import { dateFormat, md5, randomCode, postDataCheck, isNullVal, printErrorCode } from './../../utils/func'
+import { dateFormat, md5, randomCode, postDataCheck, isNullVal, printErrorCode } from '../../utils/base'
 import { sqlQueryWithParam, sqlQuery } from './../../service/mysql'
 import {Decrypt, Encrypt} from './../../utils/aes'
 

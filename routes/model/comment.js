@@ -3,9 +3,7 @@ import {
     sqlQueryWithParam
 } from './../../service/mysql';
 import async from 'async';
-import {
-    printErrorCode
-} from './../../error/index'
+
 
 export default function(req, res, filter, cb) {
     var user_id = req.session.user_id;
@@ -33,13 +31,18 @@ export default function(req, res, filter, cb) {
             res.json(returnData);
         }else{
             var sqlQuery = `
-                select * from (select * from feed_reply) f 
+                select *,
+                 (select user_name  from user_info where user_id = f.to_user_id) to_user_name,
+                 (select user_id  from user_info where user_id = f.to_user_id) to_user_id,
+                 (select user_icon  from user_info where user_id = f.to_user_id) to_user_icon                                
+                 from (select * from feed_reply) f 
                 left join (select user_name,user_icon,user_id from user_info) u
                 on u.user_id = f.from_user_id
                 where f.say_id = ? and f.deleted = 0 or f.deleted > ${req_time}
-                limit ?,?
+                order by f.reply_time desc
+                LIMIT ?,?
             `;
-        var param = [say_id, real_page_num, page_count];
+        var param = [say_id,real_page_num,page_count];
         sqlQueryWithParamCb(sqlQuery, param, function (err, result) {
             returnData.no_more = page_total - (real_page_num + page_count) > 0 ? false : true;
             returnData.no_data = page_total <= 0;
@@ -51,6 +54,13 @@ export default function(req, res, filter, cb) {
                     reply_time: el.reply_time,
                     user_name: el.user_name,
                     user_icon: el.user_icon == '' ? '' : el.user_icon,
+                    parent_id:el.parent_id,
+                    origin_id:el.origin_id,
+                    reply_type:el.reply_type,
+                        to_user_id: el.to_user_id,
+                        to_user_name: el.to_user_name,
+                        to_user_icon: el.to_user_icon == '' ? '' : el.to_user_icon,
+
                     auth: {
                         can_delete: el.auth_self_post == 1,
                         can_follow: el.user_id != returnData.req_user_id,

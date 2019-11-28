@@ -1,5 +1,5 @@
 var { Decrypt } = require('./aes');
-var { reg_password,reg_email,reg_phone }  = require('./RegExpress');
+var { reg_password,reg_email,reg_phone }  = require('./reg-exp');
 var _ = require('underscore');
 export default {
     password:function(value) {
@@ -53,9 +53,20 @@ export default {
             throw new Error(key + '的长度小于' + min +"个字符");
         }
         if( String(value).length > max ){
-            throw new Error(key + '的长度大于' + min +"个字符");
+            throw new Error(key + '的长度大于' + max +"个字符");
+        }
+        return value;
+    },
+    nickName:function(min,max,value){
+        var key = this.label || this.name;
+        if( String(value).length < min ){
+            throw new Error(key + '的长度小于' + min +"个字符");
+        }
+        if( String(value).length > max ){
+            throw new Error(key + '的长度大于' + max +"个字符");
         }
         return value;
     }
+
 
 }

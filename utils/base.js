@@ -1,6 +1,5 @@
 import { createHash } from "crypto";
-import { printErrorCode } from './../error'
-import async from 'async'
+import { printErrorCode } from './error'
 
 export function randomCode(len = 6){
     return ('0'.repeat(len) + Math.floor(Math.random() * parseInt('9'.repeat(len)))).slice(-len)

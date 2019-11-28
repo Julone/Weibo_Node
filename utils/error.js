@@ -28,7 +28,9 @@ let errList = {
     },
     user:{
         100:'获取用户信息失败!',
-        120:'更新用户信息失败!'
+        120:'更新用户信息失败!',
+        380:'原密码错误!',
+        404:'用户不存在',
     },
     feed:{
         102:'获取微博列表错误!',
@@ -36,23 +38,25 @@ let errList = {
     },
     comment:{
         102:'获取评论列表错误!'
-
+    },
+    menu:{
+        120:'获取用户菜单失败'
     },
     sql:{
         302:'记录删除失败！',
         304:'插入记录失败！',
         309:'该用户不存在！',
         310:'更新数据失败'
-
+    },
+    follow:{
+        102:'获取关注人列表失败'
     }
-}
-
-
+};
 exports.printErrorCode = function(res,...args){
     let msg =args.reduce((t,el)=>{
         t = t[el];
         return t;
-    },errList)
+    },errList);
     res.json({
         code:args[1],
         msg:msg,
