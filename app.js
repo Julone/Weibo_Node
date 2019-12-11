@@ -15,14 +15,14 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'assets')));
 app.use('/uploads',express.static(path.join(__dirname, 'uploads')));
 app.use('/icon',express.static(path.join(__dirname, 'uploads/user_icon')));
-require('./global');
+require('./Server/global');
 //自定义目录
 app.use(compression());
 // //-------中间件
-app.use(require('./middleware/session'));
-app.use(require('./middleware/token').set_session_user_id);
+app.use(require('./Server/middleware/session'));
+app.use(require('./Server/middleware/token').set_session_user_id);
 //自定义路由
-require('./routes')(app);
+(require('./Server/routes'))(app);
 // 捕获错误
 app.use(function(err, req, res, next) {
 	if (err instanceof datalize.Error) {
@@ -41,6 +41,13 @@ app.use(function(err, req, res, next) {
         });
   }
 });
+app.use(function a (req, res, next) {
+    return a(req, res, next).catch(rej => {
+
+        res.send('Internal Error');
+    });
+})
+
 
 //未捕获异常
 process.on('unhandledRejection', error => {
