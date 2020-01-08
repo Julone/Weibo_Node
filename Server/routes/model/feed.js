@@ -97,6 +97,7 @@ export default function(req, res, filter, cb) {
                     }
                 };
                 if (el.repost_status == 1 && el.repost_from_id && el.repost_original_id) {
+                    console.log(el.o_deleted);
                     if (el.o_deleted == 0) {
                         let o_say_img = [];
                         try{

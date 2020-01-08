@@ -38,7 +38,6 @@ let sms = {
                 mobile: mobile //手机号码
             }
         };
-
         request({
             url: config.url+'?accesskey='+config.accesskey+'&random='+random,
             method: 'POST',

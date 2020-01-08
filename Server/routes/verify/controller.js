@@ -3,9 +3,18 @@ import email from '../../service/email'
 import redis from '../../service/redis'
 import sms from '../../service/sms'
 import Token from '../../service/token'
-import { md5, randomCode, isNullVal, printErrorCode } from '../../utils/base'
+import { md5, randomCode, isNullVal, printErrorCode,dateFormat } from '../../utils/base'
 import { sqlQueryWithParam, sqlQuery } from '../../service/mysql'
 import {Decrypt, Encrypt} from '../../utils/aes'
+function check_bannedTime(time){
+  if(!time) return false;
+  var time = time.split(',').map(el => Number(el));
+  var cur = Date.now();
+  if(time.length < 2 ) return false;
+  if(cur >= time[0] && cur <= time[1]){
+    return time
+  }
+}
 
 exports.login = async function (req, res) {
   try{
@@ -13,9 +22,17 @@ exports.login = async function (req, res) {
     var data = await userLoginByEmail(req, res); //把邮箱与密码与数据库进行匹配
     var userpass = req.body.userpass;//获取经过加密后的用户密码，
     if (data.code == 200) {//如果查询到了用户
+      if(data.data.deleted != 0 && data.data.deleted != null) {
+        throw new Error(340) //抛出用户不存在异常
+      }
+      let t =  null;
+      if(t = check_bannedTime(data.data.user_banned)){
+        let time = dateFormat.call(new Date(t[1]),'yyyy-MM-dd hh:mm:ss');
+        return res.json({code:342,msg:`该账号已被封锁，将于${time}之后解封!`});
+      }
       let { user_id,user_name,user_icon } = data.data; //把数据库查询结果中的用户ID、用户名、用户头像取出
       if(data.data.user_pass == userpass){ //如果数据库中的加密密码与表单中密码相同
-        let token = Token.generateToken({ user_id,exp:12 });//签发TOKEN
+        let token = Token.generateToken({ user_id,exp: 1 });//签发TOKEN 1小时
         let finalData = {user_id,user_name,user_icon,token:token};//用户ID、用户名、用户头像以及TOKEN
         res.json({code:200,msg:'登录成功!',data: finalData})//将数据和状态码和消息返回浏览器
       }else{
@@ -59,7 +76,9 @@ exports.unique_username = async function(req,res){
 
 async function userLoginByEmail(req) {
   var usermail = req.body.usermail;
-  var sql = 'select * from user_info where user_email = ? limit 1';
+  var sql = 'select i.*,s.deleted,s.user_banned from user_info i ' +
+      'left join user_status s on i.user_id = s.user_id ' +
+      ' where user_email = ? limit 1';
   var para = [usermail];
   var a = await sqlQueryWithParam(sql, para);
   if(_.isArray(a) && a.length != 0){
@@ -118,7 +137,7 @@ exports.register = async function (req, res, next) {
     var username = req.body.username || null;
     var result = await userLoginByEmail(req);
     if (result.code == 404) {
-        // checkEmail(req, res, function(){
+        checkEmail(req, res, function(){
           var sql = `insert into user_info(user_id,user_name,user_pass,user_email,
                       user_icon,user_phone,user_sex,user_birth,user_reg_time) 
                       values( REPLACE(UUID(),"-","") ,?,?,?,?,?,?,?,?)`;
@@ -141,8 +160,7 @@ exports.register = async function (req, res, next) {
               throw new Error(503);
             }
           })
-        // });
-        
+        });
     }else{
       throw new Error(506);
     }

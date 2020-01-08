@@ -11,7 +11,12 @@ app.use(logger('dev'));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb' , extended: false }));
 app.use(cookieParser());
-
+app.all('*', function(req, res, next) {
+    res.header('Access-Control-Allow-Origin', "*");
+    res.header('Access-Control-Allow-Headers', 'X-Requested-With,Content-Type');
+    res.header('Access-Control-Allow-Methods','PUT,POST,GET,DELETE,OPTIONS');
+    next();
+});
 app.use(express.static(path.join(__dirname, 'assets')));
 app.use('/uploads',express.static(path.join(__dirname, 'uploads')));
 app.use('/icon',express.static(path.join(__dirname, 'uploads/user_icon')));
@@ -41,14 +46,6 @@ app.use(function(err, req, res, next) {
         });
   }
 });
-app.use(function a (req, res, next) {
-    return a(req, res, next).catch(rej => {
-
-        res.send('Internal Error');
-    });
-})
-
-
 //未捕获异常
 process.on('unhandledRejection', error => {
   console.error('unhandledRejection', error);

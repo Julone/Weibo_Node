@@ -36,10 +36,12 @@ async function to_json({req,res,sqlCount,sql,handle_data = null}){
 
 
 exports.weibo_get = async (req, res) => {
+    var q = req.query.q || '';
     var sqlCount = `select count(1) total from feed_say f left join 
-         user_info u on f.user_id = u.user_id`;
+         user_info u on f.user_id = u.user_id where say_text like '%${q}%'`;
     var sql = ` select s.*,i.user_id,i.user_icon,i.user_name from feed_say s
                     left join user_info i on s.user_id = i.user_id
+                    where say_text like '%${q}%'
                     order by id desc
                     limit ?,?
                    `;
@@ -47,6 +49,21 @@ exports.weibo_get = async (req, res) => {
             return data.map(el=>{
                 el.say_img = _.parseJSON(el.say_img);
                 return _.omit(el,'say_text','repost_from_id','repost_original_id');
+            })
+        }})
+};
+exports.user_get = async (req, res) => {
+    var q = req.query.q || '';
+    var sqlCount = `select count(1) total from user_info where user_name like '%${q}%'`;
+    var sql = ` select s.*,i.* from user_info i
+                    left join user_status s on s.user_id = i.user_id
+                    where user_name like '%${q}%'
+                    order by i.id desc
+                    limit ?,?`;
+    return to_json({sqlCount,sql,req,res,handle_data:function weibo_format(data){
+            return data.map(el=>{
+                el.say_img = _.parseJSON(el.say_img);
+                return el;
             })
         }})
 };
@@ -74,13 +91,25 @@ limit ?,?
         }})
 };
 exports.reply_get = (req,res) => {
-    var sqlCount = `select count(1) total from feed_reply f`;
+    var q = req.query.q || '';
+    var sqlCount = `select count(1) total from feed_reply f where reply_text like '%${q}%'`;
     var sql = ` select s.*,i.user_id,i.user_icon,i.user_name,
                     (select user_name from user_info where user_id = s.to_user_id) to_user_name,
                     (select user_icon from user_info where user_id = s.to_user_id) to_user_icon
                     from feed_reply s
                     left join user_info i on s.from_user_id = i.user_id
+                    where reply_text like '%${q}%'
                     order by reply_time desc
+                    limit ?,?
+                   `;
+    return to_json({sqlCount,sql,req,res})
+};
+exports.topic_get = (req,res) => {
+    var q = req.query.q || '';
+    var sqlCount = `select count(1) total from feed_topic f where topic_name like '%${q}%'`;
+    var sql = ` select * from feed_topic
+                    where topic_name like '%${q}%'
+                    order by id desc
                     limit ?,?
                    `;
     return to_json({sqlCount,sql,req,res})

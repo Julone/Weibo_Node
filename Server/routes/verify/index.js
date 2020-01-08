@@ -1,6 +1,6 @@
 import express from 'express'
-const router =  express.Router()
-const controller = require('./controller')
+const router =  express.Router();
+const controller = require('./controller');
 
 router.post('/login',controller.login);
 router.post('/register',datalize([
@@ -18,4 +18,4 @@ router.post('/checkUserName',datalize([
     _field('user_name','用户昵称').trim().required().nickName(2,10)
 ]),controller.unique_username);
 
-module.exports =  router
+module.exports =  router;

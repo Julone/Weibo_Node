@@ -9,17 +9,15 @@ import {Decrypt, Encrypt} from '../../utils/aes'
 
 export function  getMenu(req,res) {
   var user_id = req.session.user_id || '';
-  var sql = `
-             select * from user_menu where role = 'visitor' 
-             union all
+  var sql = `select * from user_menu where role = 'visitor'`;
+  var loginedSQL = sql + ` union all
              select * from user_menu where role = 'user' and (
                 select 1 from user_info where user_id = ?
              ) = 1
              union all
              select * from user_menu where role ='admin' and 
-             (select user_admin from user_status where user_id = ? and deleted = 0 ) = 1
-            `;
-  sqlQueryWithParam(sql,[user_id,user_id]).then( r=>{
+             (select user_admin from user_status where user_id = ? and deleted = 0 ) = 1`;
+  sqlQueryWithParam((!!user_id?loginedSQL:sql),[user_id,user_id]).then( r=>{
       let data =  r.map( el=> _.omit(el,'Id') ) ;
       res.json({
         code: 200,
